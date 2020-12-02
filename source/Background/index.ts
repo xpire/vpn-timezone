@@ -110,36 +110,72 @@ export const updateHandler = (timezone: string, ip = "N/A") => {
   );
 };
 
-const char2Unicode = (char: string) =>
-  `\uD83C${String.fromCharCode(
-    parseInt("0xDDE6") + char.toLowerCase().charCodeAt(0) - 97
-  )}`;
+// const char2Unicode = (char: string) =>
+//   `\uD83C${String.fromCharCode(
+//     parseInt("0xDDE6") + char.toLowerCase().charCodeAt(0) - 97
+//   )}`;
 
-const flag = (countryCode: string) =>
-  countryCode &&
-  countryCode
-    .split("")
-    .map((char) => char2Unicode(char))
-    .join("");
+// const flag = (countryCode: string) =>
+//   countryCode &&
+//   countryCode
+//     .split("")
+//     .map((char) => char2Unicode(char))
+//     .join("");
+const flag = (countryCode: string) => countryCode;
+
+const apiEndpoints = [
+  {
+    url: "http://ip-api.com/json",
+    key: "query",
+  },
+  {
+    url: "http://worldtimeapi.org/api/ip",
+    key: "client_ip",
+  },
+];
+
+type apiType = {
+  url: string;
+  key: string;
+};
+
+const api = (url: string) =>
+  fetch(url).then((r) => {
+    console.log("api: ", { r });
+    if (!r.ok) throw new Error(r.statusText);
+    return r.json();
+  });
 
 const autoHandler = async (alarm: Alarms.Alarm) => {
   console.log("auto handler got alarm: ", { alarm });
 
-  // fetch("http://ip-api.com/json")
-  fetch("http://worldtimeapi.org/api/ip")
-    .then((r) => {
-      console.log("api: ", { r });
-      if (!r.ok) throw new Error(r.statusText);
-      return r.json();
-    })
-    .then((data) => {
-      console.log("api data: ", { data });
-      console.log("calling updateHandler from autoHandler", data.timezone);
-      updateHandler(data.timezone, data.client_ip); //data.query for ip-api
-    })
-    .catch((err) => {
-      console.log("I HIT ERROR IN FETCH FOR IP API: ", err);
-    });
+  let endpoint: apiType = apiEndpoints[0];
+  for (endpoint of apiEndpoints) {
+    console.log("for loop: ", endpoint);
+    await api(endpoint.url)
+      .then((data) => {
+        console.log("api success", { endpoint, data });
+        return updateHandler(data.timezone, data[endpoint.key]);
+      })
+      .catch((err) => {
+        console.log("I HIT ERROR IN FETCH:", { endpoint }, err);
+      });
+  }
+  // // fetch("http://ip-api.com/json")
+  // fetch("http://worldtimeapi.org/api/ip")
+  //   .then((r) => {
+  //     console.log("api: ", { r });
+  //     if (!r.ok) throw new Error(r.statusText);
+  //     return r.json();
+  //   })
+  //   .then((data) => {
+  //     console.log("api data: ", { data });
+  //     console.log("calling updateHandler from autoHandler", data.timezone);
+  //     updateHandler(data.timezone, data.client_ip); //data.query for ip-api
+  //   })
+  //   .catch((err) => {
+  //     console.log("I HIT ERROR IN FETCH FOR IP API: ", err);
+  //   });
 };
 
 browser.webNavigation.onCommitted.addListener(onCommittedHandler, {

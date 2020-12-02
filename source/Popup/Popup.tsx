@@ -60,17 +60,25 @@ const Popup: React.FC = () => {
     updateData();
   }, []);
 
-  browser.runtime.onMessage.addListener(
-    (data: timezoneMessage, sender: Runtime.MessageSender) => {
-      console.log("runtime.onMessage FRONTEND was called with", {
-        data,
-        sender,
-      });
-      if (data.type === SUCCESS_MESSAGE_TYPE) {
-        updateData();
-      }
+  const getUpdateMessage = (
+    data: timezoneMessage,
+    sender: Runtime.MessageSender
+  ) => {
+    console.log("runtime.onMessage FRONTEND was called with", {
+      data,
+      sender,
+    });
+    if (data.type === SUCCESS_MESSAGE_TYPE) {
+      updateData();
     }
-  );
+  };
+
+  useEffect(() => {
+    browser.runtime.onMessage.addListener(getUpdateMessage);
+    return () => {
+      browser.runtime.onMessage.removeListener(getUpdateMessage);
+    };
+  }, []);
 
   const handleRefresh = () => {
     const sending = browser.runtime.sendMessage({
