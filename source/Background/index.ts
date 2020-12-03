@@ -152,30 +152,15 @@ const autoHandler = async (alarm: Alarms.Alarm) => {
   let endpoint: apiType = apiEndpoints[0];
   for (endpoint of apiEndpoints) {
     console.log("for loop: ", endpoint);
-    await api(endpoint.url)
-      .then((data) => {
+    try {
+      return await api(endpoint.url).then((data) => {
         console.log("api success", { endpoint, data });
         return updateHandler(data.timezone, data[endpoint.key]);
-      })
-      .catch((err) => {
-        console.log("I HIT ERROR IN FETCH:", { endpoint }, err);
       });
+    } catch (err) {
+      console.log("I HIT ERROR IN FETCH, continuing:", { endpoint }, err);
+    }
   }
-  // // fetch("http://ip-api.com/json")
-  // fetch("http://worldtimeapi.org/api/ip")
-  //   .then((r) => {
-  //     console.log("api: ", { r });
-  //     if (!r.ok) throw new Error(r.statusText);
-  //     return r.json();
-  //   })
-  //   .then((data) => {
-  //     console.log("api data: ", { data });
-  //     console.log("calling updateHandler from autoHandler", data.timezone);
-  //     updateHandler(data.timezone, data.client_ip); //data.query for ip-api
-  //   })
-  //   .catch((err) => {
-  //     console.log("I HIT ERROR IN FETCH FOR IP API: ", err);
-  //   });
 };
 
 browser.webNavigation.onCommitted.addListener(onCommittedHandler, {
@@ -200,11 +185,11 @@ browser.runtime.onStartup.addListener(() => {
   updateHandler("Etc/GMT");
 });
 
-// browser.alarms.create({ periodInMinutes: 1 });
+browser.alarms.create({ periodInMinutes: 1 });
 
-// browser.alarms.onAlarm.addListener(autoHandler);
+browser.alarms.onAlarm.addListener(autoHandler);
 
-// autoHandler({ name: "hello", scheduledTime: Date.now() });
+autoHandler({ name: "hello", scheduledTime: Date.now() });
 
 export type timezoneMessage = {
   timezone: string;
